@@ -15,7 +15,6 @@
 # Authors: Anish Swaminathan <anishs@vmware.com>
 #          Andrew Kutz <akutz@vmware.com>
 #
-import os
 import base64
 import zlib
 import json
@@ -29,12 +28,13 @@ from distutils.spawn import find_executable
 
 LOG = logging.getLogger(__name__)
 
+
 # This cloud-init datasource was designed for use with CentOS 7,
 # which uses cloud-init 0.7.9. However, this datasource should
-# work with any Linux distribution for which cloud-init is 
+# work with any Linux distribution for which cloud-init is
 # avaialble.
 #
-# The documentation for cloud-init 0.7.9's datasource is 
+# The documentation for cloud-init 0.7.9's datasource is
 # available at http://bit.ly/cloudinit-datasource-0-7-9. The
 # current documentation for cloud-init is found at
 # https://cloudinit.readthedocs.io/en/latest/.
@@ -65,13 +65,16 @@ LOG = logging.getLogger(__name__)
 #     format of the metadata key "network". Valid encodings are base64
 #     and gzip+base64.
 class DataSourceVMwareGuestInfo(sources.DataSource):
-    def __init__(self, sys_cfg, distro, paths, ud_proc=None):
-        sources.DataSource.__init__(self, sys_cfg, distro, paths, ud_proc)
+    dsname = 'VMwareGuestInfo'
+
+    def __init__(self, sys_cfg, distro, paths):
+        sources.DataSource.__init__(self, sys_cfg, distro, paths)
         self.vmtoolsd = find_executable("vmtoolsd")
         if not self.vmtoolsd:
             LOG.error("Failed to find vmtoolsd")
+        LOG.debug("Initializing VMwareGuestInfo data source - complete")
 
-    def get_data(self):
+    def _get_data(self):
         if not self.vmtoolsd:
             LOG.error("vmtoolsd is required to fetch guestinfo value")
             return False
@@ -81,11 +84,17 @@ class DataSourceVMwareGuestInfo(sources.DataSource):
         if metadata:
             self.metadata = json.loads(metadata)
 
+        LOG.debug("metadata: %s", metadata)
+
         # Get the YAML userdata. Can be plain-text, base64, or gzip+base64.
         self.userdata_raw = self._get_encoded_guestinfo_data('userdata')
 
+        LOG.debug("userdata: %s", self.userdata_raw)
+
         # Get the YAML vendordata. Can be plain-text, base64, or gzip+base64.
         self.vendordata_raw = self._get_encoded_guestinfo_data('vendordata')
+
+        LOG.debug("vendordata: %s", self.vendordata_raw)
 
         return True
 
@@ -179,13 +188,19 @@ class DataSourceVMwareGuestInfo(sources.DataSource):
             if error.stderr == NOVAL:
                 LOG.debug("No value found for key %s", key)
             else:
-                util.logexc(LOG,"Failed to get guestinfo value for key %s: %s", key, error)
+                util.logexc(LOG, "Failed to get guestinfo value for key %s: %s", key, error)
         except Exception:
-            util.logexc(LOG,"Unexpected error while trying to get guestinfo value for key %s", key)
+            util.logexc(LOG, "Unexpected error while trying to get guestinfo value for key %s", key)
         return None
 
+
+# Used to match classes to dependencies
+datasources = [
+    (DataSourceVMwareGuestInfo, (sources.DEP_FILESYSTEM,)),
+]
+
+
+# Return a list of data sources that match this set of dependencies
 def get_datasource_list(depends):
-    """
-    Return a list of data sources that match this set of dependencies
-    """
-    return [DataSourceVMwareGuestInfo]
+    LOG.debug("depends check with depends=%s",depends)
+    return sources.list_from_depends(depends, datasources)
