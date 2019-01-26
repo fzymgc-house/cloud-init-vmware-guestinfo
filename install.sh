@@ -2,7 +2,7 @@
 
 #
 # usage: install.sh
-#        curl -sSL https://raw.githubusercontent.com/akutz/cloud-init-vmware-guestinfo/master/install.sh | sh -
+#        curl -sSL https://raw.githubusercontent.com/fzymgc-house/cloud-init-vmware-guestinfo/master/install.sh | sh -
 #
 
 # The script to lookup the path to the cloud-init's datasource directory, "sources".
@@ -17,7 +17,7 @@ CLOUD_INIT_SOURCES=$(python -c ''"${PY_SCRIPT}"'' 2>/dev/null || \
 [ -z "${CLOUD_INIT_SOURCES}" ] && echo "cloud-init not found" 1>&2 && exit 1
 
 # The repository from which to fetch the cloud-init datasource and config files.
-REPO_SLUG="${REPO_SLUG:-https://raw.githubusercontent.com/akutz/cloud-init-vmware-guestinfo}"
+REPO_SLUG="${REPO_SLUG:-https://raw.githubusercontent.com/fzymgc-house/cloud-init-vmware-guestinfo}"
 
 # The git reference to use. This can be a branch or tag name as well as a commit ID.
 GIT_REF="${GIT_REF:-master}"
